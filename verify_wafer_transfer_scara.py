@@ -45,7 +45,7 @@ def generate_cartesian_slip_bounded_trajectory(cartesian_wps, mu=0.25, g=9.81, s
     pc_vel = constraint.JointVelocityConstraint([v_max, v_max, 2.0])
     pc_acc = constraint.JointAccelerationConstraint([a_max_comp, a_max_comp, 4.0])
 
-    instance = ta.algorithm.TOPPRA([pc_vel, pc_acc], path, gridpoints=np.linspace(0, 1, 200))
+    instance = ta.algorithm.TOPPRA([pc_vel, pc_acc], path, gridpoints=np.linspace(0, 1, 200), solver_wrapper='ecos')
     traj = instance.compute_trajectory(0.0, 0.0)
     return traj
 

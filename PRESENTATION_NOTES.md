@@ -84,7 +84,7 @@ $$
 $$
 
 #### Coulomb No-Slip Criterion
-Macroscopic sliding is prevented if the tangential contact force remains within the Coulomb friction cone:
+Macroscopic sliding is prevented if the tangential contact force remains strictly within the Coulomb friction cone:
 
 $$
 \|\mathbf{f}_t\|_2 \le \mu_s N \iff m_w \|\mathbf{a}_{\text{tip}}\|_2 \le \mu_s m_w g \iff \|\mathbf{a}_{\text{tip}}\|_2 \le \mu_s g
@@ -93,7 +93,7 @@ $$
 For nominal static friction coefficient $\mu_s = 0.25$:
 
 $$
-a_{\text{coulomb}} = 0.25 \times 9.81\text{ m/s}^2 = 2.4525\text{ m/s}^2
+a_{\text{coulomb}} = \mu_s g = 0.25 \times 9.81\text{ m/s}^2 = 2.4525\text{ m/s}^2
 $$
 
 #### Safety Factor Derating ($\eta = 0.85$)
@@ -145,16 +145,35 @@ $$
 #### Analytical Inverse Kinematics (IK)
 For any desired Cartesian pose $\mathbf{x}_{\text{des}} = [x, y, \phi]^T$:
 
-1. **Wrist pivot position:**
-   $$x_w = x - l_3 \cos\phi, \quad y_w = y - l_3 \sin\phi$$
-2. **Radial reach squared:**
-   $$r_w^2 = x_w^2 + y_w^2$$
-3. **Elbow angle $\theta_2$ (Law of Cosines):**
-   $$D = \frac{r_w^2 - l_1^2 - l_2^2}{2 l_1 l_2}, \quad \theta_2 = \text{atan2}\left(\sqrt{1 - D^2}, D\right) \quad (\text{elbow-up})$$
-4. **Shoulder angle $\theta_1$:**
-   $$\theta_1 = \text{atan2}(y_w, x_w) - \text{atan2}(l_2 \sin\theta_2, l_1 + l_2 \cos\theta_2)$$
-5. **Decoupled wrist angle $\theta_3$:**
-   $$\theta_3 = \phi - (\theta_1 + \theta_2)$$
+**Step 1: Wrist pivot position:**
+
+$$
+x_w = x - l_3 \cos\phi, \quad y_w = y - l_3 \sin\phi
+$$
+
+**Step 2: Radial reach squared:**
+
+$$
+r_w^2 = x_w^2 + y_w^2
+$$
+
+**Step 3: Elbow angle $\theta_2$ (Law of Cosines):**
+
+$$
+D = \frac{r_w^2 - l_1^2 - l_2^2}{2 l_1 l_2}, \quad \theta_2 = \text{atan2}\left(\sqrt{1 - D^2}, D\right) \quad (\text{elbow-up})
+$$
+
+**Step 4: Shoulder angle $\theta_1$:**
+
+$$
+\theta_1 = \text{atan2}(y_w, x_w) - \text{atan2}(l_2 \sin\theta_2, l_1 + l_2 \cos\theta_2)
+$$
+
+**Step 5: Decoupled wrist angle $\theta_3$:**
+
+$$
+\theta_3 = \phi - (\theta_1 + \theta_2)
+$$
 
 ---
 
@@ -178,7 +197,7 @@ $$
 \mathbf{a}_{\text{tip}} = \ddot{\mathbf{x}} = \mathbf{J}(\mathbf{q})\ddot{\mathbf{q}} + \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}
 $$
 
-With $\omega_1 = \dot{\theta}_1$, $\omega_{12} = \dot{\theta}_1 + \dot{\theta}_2$, $\omega_{123} = \dot{\theta}_1 + \dot{\theta}_2 + \dot{\theta}_3$:
+With joint rates $\omega_1 = \dot{\theta}_1$, $\omega_{12} = \dot{\theta}_1 + \dot{\theta}_2$, and $\omega_{123} = \dot{\theta}_1 + \dot{\theta}_2 + \dot{\theta}_3$:
 
 $$
 \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}}) = \begin{bmatrix}
@@ -216,11 +235,19 @@ $$
 
 #### Convex Optimization & Reachability
 By discretizing the path into $N$ grid points $\{s_0, \dots, s_N\}$, the non-convex time-optimal problem is mapped into sequential Linear Programs (LPs):
-1. **Backward Pass:** Computes controllable upper velocity bounds $w_i \le w_{i,\max}$.
-2. **Forward Integration:** Maximizes path velocity $w_i$ while remaining within constraint convex polygons:
-   $$\max_{u_i, w_{i+1}} w_{i+1} \quad \text{subject to} \quad w_{i+1} = w_i + 2 u_i \Delta s_i, \quad (u_i, w_i) \in \mathcal{K}_i$$
+
+1. **Backward Pass:** Computes controllable upper velocity bounds $w_i \le w_{i,\max}$ to guarantee terminal feasibility.
+2. **Forward Integration:** Maximizes path velocity $w_i$ subject to the convex linear inequality constraints:
+
+$$
+\max_{u_i, w_{i+1}} w_{i+1} \quad \text{subject to} \quad w_{i+1} = w_i + 2 u_i \Delta s_i, \quad (u_i, w_i) \in \mathcal{K}_i
+$$
+
 3. **Trajectory Duration Quadrature:**
-   $$T = \int_0^1 \frac{1}{\sqrt{w(s)}} \, ds = \sum_{i=0}^{N-1} \frac{2 \Delta s_i}{\sqrt{w_i} + \sqrt{w_{i+1}}}$$
+
+$$
+T = \int_0^1 \frac{1}{\sqrt{w(s)}} \, ds = \sum_{i=0}^{N-1} \frac{2 \Delta s_i}{\sqrt{w_i} + \sqrt{w_{i+1}}}
+$$
 
 ---
 
@@ -261,11 +288,11 @@ Additionally, `enableConeFriction=1` is configured in `p.setPhysicsEngineParamet
 
 | Run | Setup & Planning Strategy | Control / Actuation Method | Trajectory Duration | Max Measured Slip | Result | Root Cause / Failure Mechanism |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Run 0** (Phase 1 Baseline) | 1D Cartesian clamped spline via TOPP-RA | Dynamic box anchor (`JOINT_FIXED`, `erp=0.9`) | $1.060\text{ s}$ | $0.048\text{ mm}$ | **PASS** | Validated PyBullet engine calibrations ($240\text{ Hz}$, `numSolverIterations=150`, non-linear cone friction `enableConeFriction=1`, $\mu_{\text{paddle}}=1.0, \mu_{\text{wafer}}=0.25$). |
-| **Run 1** (Phase 2 Heuristic) | Joint-space spline. Decoupled joint acceleration limits ($\ddot{q}_i \le a_{\max}/L_i$) | Multi-joint PD position control (`gains=0.8`) | $1.011\text{ s}$ | $49.352\text{ mm}$ | **FAIL** | **Kinematic Coupling Fallacy:** Neglected vector addition $\mathbf{J}\ddot{\mathbf{q}}$ and centripetal term $\dot{\mathbf{J}}\dot{\mathbf{q}}$. Commanded tip acceleration reached $\sim 4.5\text{ m/s}^2$ ($180\%$ above Coulomb ceiling). Matches d'Alembert prediction ($49.6\text{ mm}$). |
-| **Run 2** (Phase 2 Derated) | Joint-space spline. Heuristic $4\times$ derated joint limits | Multi-joint PD position control (`forces=[500, 400, 200]`) | $2.096\text{ s}$ | $19.642\text{ mm}$ | **FAIL** | **Scalar Bound Inadequacy:** Doubled cycle time, but rotational swing and vector superposition still breached the friction cone. Proved scalar joint limits cannot bound 2-norm Cartesian vectors. |
-| **Run 3** (Phase 2 Operational) | Cartesian path parameterization under 2-norm acceleration, mapped via analytical IK | Operational feedforward velocity $\dot{\mathbf{q}} = \mathbf{J}^{-1}\dot{\mathbf{x}}$ with decentralized PD (`kp=0.3, kd=1.0`) | $1.114\text{ s}$ | $12.804\text{ mm}$ | **FAIL** | **Dynamic Tracking Ringing:** Trajectory was kinematically bounded ($a_{\text{planned}} \le 2.085\text{ m/s}^2$), but uncompensated manipulator inertia ($\mathbf{M}(\mathbf{q})\ddot{\mathbf{q}} + \mathbf{C}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}$) caused phase lag and high-frequency PD restorative torque oscillations ($a_{\text{actual}} \sim 3.4 - 4.1\text{ m/s}^2$). |
-| **Run 4** (Pending) | Operational Space TOPP-RA | Computed Torque Control: Inverse Dynamics Feedforward (`p.calculateInverseDynamics` RNEA) | *TBD* | *Target $\le 0.10\text{ mm}$* | *Pending* | Resolves inertial phase lag and servo chatter by canceling nonlinear manipulator dynamics. |
+| **Run 0** (Phase 1 Baseline) | 1D Cartesian clamped spline via TOPP-RA | Dynamic box anchor (`JOINT_FIXED`, `erp=0.9`) | 1.060 s | 0.048 mm | **PASS** | Validated PyBullet calibrations (240 Hz, `numSolverIterations=150`, `enableConeFriction=1`, $\mu = 0.25$). |
+| **Run 1** (Phase 2 Heuristic) | Joint-space spline; decoupled limits $\ddot{q}_i \le a_{\max}/L_i$ | Multi-joint PD control (`kp=0.8`) | 1.011 s | 49.352 mm | **FAIL** | **Kinematic Coupling Fallacy:** Neglected $\mathbf{J}\ddot{\mathbf{q}}$ vector addition and centripetal term $\dot{\mathbf{J}}\dot{\mathbf{q}}$. Commanded tip acceleration peaked at $\sim 4.5\text{ m/s}^2$ (180% above limit). |
+| **Run 2** (Phase 2 Derated) | Joint-space spline; 4x derated scalar joint limits | Multi-joint PD control (`forces=[500, 400, 200]`) | 2.096 s | 19.642 mm | **FAIL** | **Scalar Bound Inadequacy:** Doubled cycle time, but rotational swing and vector superposition still breached the friction cone. Proved scalar joint limits cannot bound 2-norm Cartesian vectors. |
+| **Run 3** (Phase 2 Operational) | Cartesian spline under 2-norm bound mapped via IK | Operational feedforward velocity $\dot{\mathbf{q}} = \mathbf{J}^{-1}\dot{\mathbf{x}}$ with PD (`kp=0.3, kd=1.0`) | 1.114 s | 12.804 mm | **FAIL** | **Dynamic Tracking Ringing:** Trajectory was kinematically bounded ($a_{\text{planned}} \le 2.085\text{ m/s}^2$), but uncompensated link inertia caused phase lag and high-frequency PD torque chatter ($a_{\text{actual}} \sim 3.4 - 4.1\text{ m/s}^2$). |
+| **Run 4** (Pending) | Operational Space TOPP-RA | Computed Torque Control: Inverse Dynamics Feedforward (`p.calculateInverseDynamics` RNEA) | *TBD* | Target $\le 0.100\text{ mm}$ | *Pending* | Resolves inertial phase lag and servo chatter by canceling nonlinear manipulator dynamics via feedforward. |
 
 ---
 
@@ -273,7 +300,11 @@ Additionally, `enableConeFriction=1` is configured in `p.setPhysicsEngineParamet
 
 #### Run 1 Failure: The Kinematic Coupling Fallacy
 Decoupled joint limits assume independent, orthogonal motion. In multi-link revolute manipulators:
-$$\mathbf{a}_{\text{tip}} = \mathbf{J}\ddot{\mathbf{q}} + \dot{\mathbf{J}}\dot{\mathbf{q}}$$
+
+$$
+\mathbf{a}_{\text{tip}} = \mathbf{J}\ddot{\mathbf{q}} + \dot{\mathbf{J}}\dot{\mathbf{q}}
+$$
+
 Simultaneous rotation of Shoulder and Elbow links causes constructive vector addition of linear tangential accelerations and inward centripetal acceleration $\omega_1^2 (l_1 + l_2 \cos\theta_2)$. The tip acceleration vector magnitude peaked at $4.5\text{ m/s}^2$ ($180\%$ above $\mu_s g$), resulting in gross wafer slippage of $49.352\text{ mm}$.
 
 #### Run 2 Failure: Inadequacy of Scalar Derating
@@ -281,7 +312,11 @@ Artificially reducing scalar joint acceleration limits by $4\times$ doubled the 
 
 #### Run 3 Failure: Dynamic Tracking Ringing
 Trajectory planning was strictly bounded in Cartesian space ($a_{\text{planned}} \le 2.085\text{ m/s}^2$). However, decentralized PD servos without dynamic feedforward cannot anticipate link inertia:
-$$\boldsymbol{\tau} = \mathbf{M}(\mathbf{q})\ddot{\mathbf{q}} + \mathbf{C}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}$$
+
+$$
+\boldsymbol{\tau} = \mathbf{M}(\mathbf{q})\ddot{\mathbf{q}} + \mathbf{C}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}
+$$
+
 The arm lagged behind the commanded motion profile. When errors accumulated, restorative PD torques snapped the joints forward, exciting high-frequency oscillations where actual tip acceleration spiked to $3.4 - 4.1\text{ m/s}^2$, breaking Coulomb stiction ($12.804\text{ mm}$ slip).
 
 ---
@@ -309,11 +344,29 @@ This feedforward signal linearizes the multi-body dynamics, enabling position an
 
 ## 5. Oral Defense Technical Q&A
 
-**Q1: Why is non-prehensile manipulation preferred over vacuum or mechanical clamping in semiconductor wafer transfer?**  
-> **Answer:** Mechanical edge-gripping causes localized wafer edge micro-chipping, lattice fractures, and particle shedding that contaminate the vacuum process chamber. Vacuum chucking requires umbilical routing, risks backside particle embedding, and introduces localized thermal and mechanical distortion that degrades photolithography focus depth. Non-prehensile planar transport eliminates these failure modes completely by operating strictly within the Coulomb friction cone.
+### Q1: Why is non-prehensile manipulation preferred over vacuum or mechanical clamping in semiconductor wafer transfer?
+Mechanical edge-gripping causes localized wafer edge micro-chipping, lattice fractures, and particle shedding that contaminate the vacuum process chamber. Vacuum chucking requires umbilical routing, risks backside particle embedding, and introduces localized thermal and mechanical distortion that degrades photolithography focus depth. Non-prehensile planar transport eliminates these failure modes completely by operating strictly within the Coulomb friction cone.
 
-**Q2: What is the physical role of the convective acceleration term $\dot{\mathbf{J}}\dot{\mathbf{q}}$?**  
-> **Answer:** The term $\dot{\mathbf{J}}\dot{\mathbf{q}}$ represents the rate of change of the Jacobian along the motion trajectory, capturing centripetal accelerations (proportional to squared joint rates $\omega_i^2$) and Coriolis coupling between moving links. In high-speed motions, ignoring $\dot{\mathbf{J}}\dot{\mathbf{q}}$ severely underestimates operational tip acceleration, causing immediate friction cone violation even when joint accelerations $\ddot{\mathbf{q}}$ are small.
+---
 
-**Q3: Why can scalar joint acceleration limits never optimally bound Cartesian tip acceleration?**  
-> **Answer:** The mapping between joint space and operational space is configuration-dependent: $\mathbf{a}_{\text{tip}} = \mathbf{J}(\mathbf{q})\ddot{\mathbf{q}} + \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}$. A scalar limit box in joint space $\{\ddot{q}_i \in [-\ddot{q}_{i,\max}, \ddot{q}_{i,\max}]\}$ maps to an oblique, configuration-varying zonotope in Cartesian space. It is either overly conservative (drastically increasing cycle times) or permits dangerous diagonal combinations where constructive vector superposition breaches the spherical 2-norm friction boundary $\|\mathbf{a}_{\text{tip}}\|_2 \le a_{\max}$.
+### Q2: What is the physical role of the convective acceleration term $\dot{\mathbf{J}}\dot{\mathbf{q}}$?
+The term $\dot{\mathbf{J}}\dot{\mathbf{q}}$ represents the rate of change of the Jacobian along the motion trajectory, capturing centripetal accelerations (proportional to squared joint rates $\omega_i^2$) and Coriolis coupling between moving links. In high-speed motions, ignoring $\dot{\mathbf{J}}\dot{\mathbf{q}}$ severely underestimates operational tip acceleration, causing immediate friction cone violation even when joint accelerations $\ddot{\mathbf{q}}$ are small:
+
+$$
+\mathbf{a}_{\text{tip}} = \mathbf{J}(\mathbf{q})\ddot{\mathbf{q}} + \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}
+$$
+
+---
+
+### Q3: Why can scalar joint acceleration limits never optimally bound Cartesian tip acceleration?
+The mapping between joint space and operational space is configuration-dependent:
+
+$$
+\mathbf{a}_{\text{tip}} = \mathbf{J}(\mathbf{q})\ddot{\mathbf{q}} + \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}
+$$
+
+A scalar limit box in joint space $\{\ddot{q}_i \in [-\ddot{q}_{i,\max}, \ddot{q}_{i,\max}]\}$ maps to an oblique, configuration-varying zonotope in Cartesian space. It is either overly conservative (drastically increasing cycle times) or permits dangerous diagonal combinations where constructive vector superposition breaches the spherical 2-norm friction boundary:
+
+$$
+\|\mathbf{a}_{\text{tip}}\|_2 \le a_{\max}
+$$

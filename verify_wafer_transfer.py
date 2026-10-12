@@ -31,7 +31,7 @@ def generate_slip_constrained_trajectory(mu=0.25, g=9.81, safety_factor=0.85):
     pc_acc = constraint.JointAccelerationConstraint(np.array([a_max_friction, a_max_friction]))
 
     gridpoints = np.linspace(0, 1, 150)
-    instance = ta.algorithm.TOPPRA([pc_vel, pc_acc], path, gridpoints=gridpoints)
+    instance = ta.algorithm.TOPPRA([pc_vel, pc_acc], path, gridpoints=gridpoints, solver_wrapper='ecos')
     trajectory = instance.compute_trajectory(0.0, 0.0)
 
     if trajectory is None:
