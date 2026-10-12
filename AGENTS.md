@@ -59,11 +59,11 @@
 | **Run 1** (Phase 2 Heuristic) | Joint-space spline; decoupled limits $\ddot{q}_i \le a_{\max}/L_i$ | Multi-joint PD position control (`gains=0.8`) | 1.011 s | 49.352 mm | **FAIL** | **Kinematic Coupling Fallacy:** Neglected $\mathbf{J}\ddot{\mathbf{q}}$ vector addition and centripetal term $\dot{\mathbf{J}}\dot{\mathbf{q}}$. Actual tip acceleration reached $\sim 4.5\text{ m/s}^2$ ($180\%$ above Coulomb ceiling). |
 | **Run 2** (Phase 2 Derated) | Joint-space spline; $4\times$ derated joint limits | Multi-joint PD position control (`forces=[500, 400, 200]`) | 2.096 s | 19.642 mm | **FAIL** | **Scalar Bound Inadequacy:** Doubled cycle time, but rotational swing and vector superposition still breached the friction cone. Proved scalar joint limits cannot bound 2-norm Cartesian vectors. |
 | **Run 3** (Phase 2 Operational) | Cartesian path parameterization under 2-norm acceleration, mapped via IK | Operational feedforward velocity $\dot{\mathbf{q}} = \mathbf{J}^{-1}\dot{\mathbf{x}}$ with decentralized PD (`kp=0.3, kd=1.0`) | 1.114 s | 12.804 mm | **FAIL** | **Dynamic Tracking Ringing:** Trajectory was kinematically bounded ($a_{\text{planned}} \le 2.085\text{ m/s}^2$), but uncompensated manipulator inertia ($\mathbf{M}(\mathbf{q})\ddot{\mathbf{q}} + \mathbf{C}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}$) caused phase lag and high-frequency PD restorative torque oscillations ($a_{\text{actual}} \sim 3.4 - 4.1\text{ m/s}^2$). |
-| **Run 4** (Pending) | Operational Space TOPP-RA | Computed Torque Control: Inverse Dynamics Feedforward (`p.calculateInverseDynamics` RNEA) | *TBD* | *Target $\le 0.100\text{ mm}$* | *Pending* | Resolves inertial phase lag and servo chatter by canceling nonlinear manipulator dynamics via feedforward. |
+| **Run 4** (Phase 2 Computed Torque) | Operational Space TOPP-RA | Computed Torque Control: Inverse Dynamics Feedforward (`p.calculateInverseDynamics` RNEA) | 1.114 s | 7.219 mm | **FAIL** | **Incomplete Dynamic Decoupling & Splitting Inadequacy:** Feedforward reduced slip by 44% (from 12.804 mm to 7.219 mm) by mitigating phase lag. However, operational-space box projection ($a_{\max}/\sqrt{2}$) ignores joint-space nonlinearities, and position-mode motor torque clamping cannot achieve true feedforward dynamic cancellation. Proves necessity of Phase 3 joint-space TOPP-RA with custom 2-norm constraint. |
 
 ### Current Next Step
-- **Action:** Breakpoint 1 (Run 4 implementation).
-- **Objective:** Update `verify_wafer_transfer_scara.py` to evaluate inverse dynamics $\boldsymbol{\tau}_{\text{ff}} = \mathbf{M}(\mathbf{q}_{\text{des}})\ddot{\mathbf{q}}_{\text{des}} + \mathbf{C}(\mathbf{q}_{\text{des}}, \dot{\mathbf{q}}_{\text{des}})\dot{\mathbf{q}}_{\text{des}}$ using `p.calculateInverseDynamics`, apply feedforward torques to the SCARA motors, stiffen the servos, and verify that measured slip satisfies $\Delta r \le 0.100\text{ mm}$.
+- **Action:** Breakpoint 2 (Phase 3 Formulation: Custom TOPP-RA Cartesian Constraint).
+- **Objective:** Formulate a custom TOPP-RA constraint subclass in `toppra.constraint.Constraint` using an 8-facet polygonal approximation of the 2-norm friction ball ($\mathbf{a}_k u + \mathbf{b}_k w \le c_k$), plan directly in joint space on $\mathbf{q}(s)$, and benchmark against the $0.100\text{ mm}$ slip threshold.
 
 ---
 
@@ -75,3 +75,4 @@
 > 1. Update the telemetry table in **Section 3 of `AGENTS.md`** with the latest empirical quantitative metrics (`Duration`, `Max Measured Slip`, `Status`, `Root Cause / Findings`).
 > 2. Synchronize the corresponding benchmark log table in **Section 4.1 of `PRESENTATION_NOTES.md`**.
 > 3. Summarize the findings and **halt for explicit user review** before advancing to the next milestone.
+

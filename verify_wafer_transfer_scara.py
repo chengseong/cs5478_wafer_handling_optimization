@@ -167,27 +167,41 @@ def main():
     q_prev = np.copy(q_init)
 
     while t < duration:
-        # Evaluate desired Cartesian pose and velocity
+        # Evaluate desired Cartesian pose, velocity, and acceleration
         x_des = traj.eval(t)
         xd_des = traj.evald(t)
+        xdd_des = traj.evaldd(t)
 
         # Inverse Kinematics mapping to joint positions
         q_des = kin.inverse_kinematics(x_des)
 
-        # Jacobian inversion mapping to feedforward joint velocities: q_dot = J^-1 * x_dot
+        # Jacobian inversion mapping to feedforward joint velocities
         J = compute_full_jacobian(kin, q_des)
         qd_des = np.linalg.solve(J, xd_des)
 
-        # Motor actuation with velocity feedforward
+        # Analytical acceleration inversion: q_ddot = J^-1 * (x_ddot - J_dot * q_dot)
+        J_dot = np.zeros((3, 3))
+        J_dot[:2, :] = kin.jacobian_derivative(q_des, qd_des)
+        qdd_des = np.linalg.solve(J, xdd_des - J_dot @ qd_des)
+
+        # Inverse dynamics feedforward via PyBullet RNEA
+        tau_ff = p.calculateInverseDynamics(
+            robot_id,
+            q_des.tolist(),
+            qd_des.tolist(),
+            qdd_des.tolist()
+        )
+
+        # Motor actuation with RNEA feedforward and stiffened servos
         p.setJointMotorControlArray(
             bodyUniqueId=robot_id,
             jointIndices=[0, 1, 2],
             controlMode=p.POSITION_CONTROL,
             targetPositions=q_des,
             targetVelocities=qd_des,
-            positionGains=[0.3, 0.3, 0.3],
+            positionGains=[1.0, 1.0, 1.0],
             velocityGains=[1.0, 1.0, 1.0],
-            forces=[300.0, 200.0, 100.0]
+            forces=tau_ff
         )
 
         p.stepSimulation()
