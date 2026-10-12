@@ -197,7 +197,11 @@ $$
 \mathbf{a}_{\text{tip}} = \ddot{\mathbf{x}} = \mathbf{J}(\mathbf{q})\ddot{\mathbf{q}} + \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}
 $$
 
-With joint rates $\omega_1 = \dot{\theta}_1$, $\omega_{12} = \dot{\theta}_1 + \dot{\theta}_2$, and $\omega_{123} = \dot{\theta}_1 + \dot{\theta}_2 + \dot{\theta}_3$:
+With joint rates:
+
+$$
+\omega_1 = \dot{\theta}_1, \quad \omega_{12} = \dot{\theta}_1 + \dot{\theta}_2, \quad \omega_{123} = \dot{\theta}_1 + \dot{\theta}_2 + \dot{\theta}_3
+$$
 
 $$
 \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}}) = \begin{bmatrix}
@@ -236,7 +240,12 @@ $$
 #### Convex Optimization & Reachability
 By discretizing the path into $N$ grid points $\{s_0, \dots, s_N\}$, the non-convex time-optimal problem is mapped into sequential Linear Programs (LPs):
 
-1. **Backward Pass:** Computes controllable upper velocity bounds $w_i \le w_{i,\max}$ to guarantee terminal feasibility.
+1. **Backward Pass:** Computes controllable upper velocity bounds to guarantee terminal feasibility:
+
+$$
+w_i \le w_{i,\max}
+$$
+
 2. **Forward Integration:** Maximizes path velocity $w_i$ subject to the convex linear inequality constraints:
 
 $$
@@ -289,9 +298,9 @@ Additionally, `enableConeFriction=1` is configured in `p.setPhysicsEngineParamet
 | Run | Setup & Planning Strategy | Control / Actuation Method | Trajectory Duration | Max Measured Slip | Result | Root Cause / Failure Mechanism |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Run 0** (Phase 1 Baseline) | 1D Cartesian clamped spline via TOPP-RA | Dynamic box anchor (`JOINT_FIXED`, `erp=0.9`) | 1.060 s | 0.048 mm | **PASS** | Validated PyBullet calibrations (240 Hz, `numSolverIterations=150`, `enableConeFriction=1`, $\mu = 0.25$). |
-| **Run 1** (Phase 2 Heuristic) | Joint-space spline; decoupled limits $\ddot{q}_i \le a_{\max}/L_i$ | Multi-joint PD control (`kp=0.8`) | 1.011 s | 49.352 mm | **FAIL** | **Kinematic Coupling Fallacy:** Neglected $\mathbf{J}\ddot{\mathbf{q}}$ vector addition and centripetal term $\dot{\mathbf{J}}\dot{\mathbf{q}}$. Commanded tip acceleration peaked at $\sim 4.5\text{ m/s}^2$ (180% above limit). |
+| **Run 1** (Phase 2 Heuristic) | Joint-space spline with decoupled limits: q̈_i ≤ a_max / L_i | Multi-joint PD control (`kp=0.8`) | 1.011 s | 49.352 mm | **FAIL** | **Kinematic Coupling Fallacy:** Neglected vector addition Jq̈ and centripetal term J̇q̇. Commanded tip acceleration peaked at ~4.5 m/s² (180% above limit). |
 | **Run 2** (Phase 2 Derated) | Joint-space spline; 4x derated scalar joint limits | Multi-joint PD control (`forces=[500, 400, 200]`) | 2.096 s | 19.642 mm | **FAIL** | **Scalar Bound Inadequacy:** Doubled cycle time, but rotational swing and vector superposition still breached the friction cone. Proved scalar joint limits cannot bound 2-norm Cartesian vectors. |
-| **Run 3** (Phase 2 Operational) | Cartesian spline under 2-norm bound mapped via IK | Operational feedforward velocity $\dot{\mathbf{q}} = \mathbf{J}^{-1}\dot{\mathbf{x}}$ with PD (`kp=0.3, kd=1.0`) | 1.114 s | 12.804 mm | **FAIL** | **Dynamic Tracking Ringing:** Trajectory was kinematically bounded ($a_{\text{planned}} \le 2.085\text{ m/s}^2$), but uncompensated link inertia caused phase lag and high-frequency PD torque chatter ($a_{\text{actual}} \sim 3.4 - 4.1\text{ m/s}^2$). |
+| **Run 3** (Phase 2 Operational) | Cartesian spline under 2-norm bound mapped via IK | Operational feedforward velocity q̇ = J⁻¹ẋ with PD (`kp=0.3, kd=1.0`) | 1.114 s | 12.804 mm | **FAIL** | **Dynamic Tracking Ringing:** Trajectory was kinematically bounded ($a_{\text{planned}} \le 2.085\text{ m/s}^2$), but uncompensated link inertia caused phase lag and high-frequency PD torque chatter ($a_{\text{actual}} \sim 3.4 - 4.1\text{ m/s}^2$). |
 | **Run 4** (Pending) | Operational Space TOPP-RA | Computed Torque Control: Inverse Dynamics Feedforward (`p.calculateInverseDynamics` RNEA) | *TBD* | Target $\le 0.100\text{ mm}$ | *Pending* | Resolves inertial phase lag and servo chatter by canceling nonlinear manipulator dynamics via feedforward. |
 
 ---
@@ -305,7 +314,13 @@ $$
 \mathbf{a}_{\text{tip}} = \mathbf{J}\ddot{\mathbf{q}} + \dot{\mathbf{J}}\dot{\mathbf{q}}
 $$
 
-Simultaneous rotation of Shoulder and Elbow links causes constructive vector addition of linear tangential accelerations and inward centripetal acceleration $\omega_1^2 (l_1 + l_2 \cos\theta_2)$. The tip acceleration vector magnitude peaked at $4.5\text{ m/s}^2$ ($180\%$ above $\mu_s g$), resulting in gross wafer slippage of $49.352\text{ mm}$.
+Simultaneous rotation of Shoulder and Elbow links causes constructive vector addition of linear tangential accelerations and inward centripetal acceleration:
+
+$$
+a_{\text{centripetal}} \sim \omega_1^2 (l_1 + l_2 \cos\theta_2)
+$$
+
+The tip acceleration vector magnitude peaked at $4.5\text{ m/s}^2$ ($180\%$ above the Coulomb ceiling $\mu_s g$), resulting in gross wafer slippage of $49.352\text{ mm}$.
 
 #### Run 2 Failure: Inadequacy of Scalar Derating
 Artificially reducing scalar joint acceleration limits by $4\times$ doubled the trajectory duration to $2.096\text{ s}$ but did not modify the configuration-dependent geometry of vector superposition. During high-curvature arcs, vector summation still exceeded $a_{\max}$, causing $19.642\text{ mm}$ slip. This proved that fixed scalar joint bounds cannot guarantee a 2-norm Cartesian acceleration limit.
@@ -332,7 +347,13 @@ $$
 \boldsymbol{\tau}_{\text{ff}} = \mathbf{M}(\mathbf{q}_{\text{des}})\ddot{\mathbf{q}}_{\text{des}} + \mathbf{C}(\mathbf{q}_{\text{des}}, \dot{\mathbf{q}}_{\text{des}})\dot{\mathbf{q}}_{\text{des}}
 $$
 
-In PyBullet, $\boldsymbol{\tau}_{\text{ff}}$ is evaluated via `p.calculateInverseDynamics` using commanded joint states $[\mathbf{q}_{\text{des}}, \dot{\mathbf{q}}_{\text{des}}, \ddot{\mathbf{q}}_{\text{des}}]$, where:
+In PyBullet, the feedforward torque is evaluated via `p.calculateInverseDynamics` using commanded joint states:
+
+$$
+\left[ \mathbf{q}_{\text{des}}, \; \dot{\mathbf{q}}_{\text{des}}, \; \ddot{\mathbf{q}}_{\text{des}} \right]
+$$
+
+where the required joint acceleration is inverted from operational space:
 
 $$
 \ddot{\mathbf{q}}_{\text{des}} = \mathbf{J}(\mathbf{q}_{\text{des}})^{-1}\left(\ddot{\mathbf{x}}_{\text{des}} - \dot{\mathbf{J}}(\mathbf{q}_{\text{des}}, \dot{\mathbf{q}}_{\text{des}})\dot{\mathbf{q}}_{\text{des}}\right)
@@ -365,7 +386,13 @@ $$
 \mathbf{a}_{\text{tip}} = \mathbf{J}(\mathbf{q})\ddot{\mathbf{q}} + \dot{\mathbf{J}}(\mathbf{q}, \dot{\mathbf{q}})\dot{\mathbf{q}}
 $$
 
-A scalar limit box in joint space $\{\ddot{q}_i \in [-\ddot{q}_{i,\max}, \ddot{q}_{i,\max}]\}$ maps to an oblique, configuration-varying zonotope in Cartesian space. It is either overly conservative (drastically increasing cycle times) or permits dangerous diagonal combinations where constructive vector superposition breaches the spherical 2-norm friction boundary:
+A scalar limit box in joint space:
+
+$$
+\mathcal{B}_{\text{joint}} = \left\{ \ddot{\mathbf{q}} \in \mathbb{R}^3 \;\middle|\; |\ddot{q}_i| \le \ddot{q}_{i,\max}, \; i = 1, 2, 3 \right\}
+$$
+
+maps to an oblique, configuration-varying zonotope in Cartesian space. It is either overly conservative (drastically increasing cycle times) or permits dangerous diagonal combinations where constructive vector superposition breaches the spherical 2-norm friction boundary:
 
 $$
 \|\mathbf{a}_{\text{tip}}\|_2 \le a_{\max}
