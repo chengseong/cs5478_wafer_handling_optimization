@@ -36,14 +36,13 @@ with **strictly zero collisions** across narrow cassette enclosures and a $350\t
 ├── README.md                               # Project documentation & run guide for teaching team
 ├── AGENTS.md                               # Persistent technical log & 12-run empirical telemetry table
 ├── PRESENTATION_NOTES.md                   # First-principles defense & oral exam manual
-├── overleaf_package/                     # NeurIPS LaTeX manuscript, IEEEtran bibliography, and figures
-├── CS5478_Wafer_Transfer_Overleaf_Package.zip # Complete uploadable Overleaf distribution archive
+├── CS5478_Wafer_Transfer_Overleaf_Package.zip # Self-contained Overleaf upload zip archive
 │
 ├── scara_wafer.urdf                        # Calibrated 3-DOF SCARA model & thin blade geometry
 ├── scara_kinematics.py                     # Analytic FK, IK, Jacobian, and Jacobian derivative
 ├── cartesian_friction_constraint.py        # Custom TOPP-RA 16-facet polyhedral friction cone constraint
 │
-├── verify_phase1_baseline.py               # Run 0: 1D clamped spline poof-of-concept
+├── verify_phase1_baseline.py               # Run 0: 1D clamped spline proof-of-concept
 ├── verify_phase2_baselines.py              # Runs 1-4: Decoupled limits, scalar derating, PD lag, computed torque
 ├── verify_phase3_joint_toppra.py           # Run 5: Joint-space TOPP-RA formulation
 ├── verify_phase4_multisegment.py           # Run 6: 3-stage SEMI 90° EFEM with active collision enclosure
@@ -58,15 +57,15 @@ with **strictly zero collisions** across narrow cassette enclosures and a $350\t
 ├── render_environment_setup.py             # High-resolution 2D kinematic corridor & 3D overview renderer
 ├── run_milestone_demo.py                   # Automated test harness running baselines vs. final benchmark
 │
-├── overleaf_package/                       # NeurIPS LaTeX Paper submission package
-│   ├── main.tex                            # LaTeX paper source
-│   ├── neurips_2024.sty                    # NeurIPS conference style
-│   ├── references.bib                      # Bibliography database
-│   └── figures/                            # High-resolution publication figures
-│       ├── fig1_efem_kinematic_map.png
-│       ├── fig2_behind_scara_progression.png
-│       └── fig3_phase7_acceleration_slip_profile.png
-└── CS5478_Wafer_Transfer_Overleaf_Package.zip # Self-contained Overleaf upload zip archive
+└── overleaf_package/                       # NeurIPS LaTeX Paper submission package
+    ├── main.tex                            # LaTeX paper source (5–8 pages, NeurIPS format)
+    ├── neurips_2024.sty                    # NeurIPS conference style
+    ├── references.bib                      # Validated IEEEtran bibliography database (14 papers)
+    └── figures/                            # High-resolution publication figures
+        ├── fig1_efem_kinematic_map.png
+        ├── fig2_scara_model.png
+        ├── fig2_behind_scara_progression.png
+        └── fig3_phase7_acceleration_slip_profile.png
 ```
 
 ---
@@ -148,11 +147,8 @@ PHASE 7 FINAL LCP-STABILIZED TRANSFER BENCHMARK RESULTS:
    ```bash
    python render_environment_setup.py
    ```
-3. **Compile the Standalone HTML Research Paper Reader:**
-   ```bash
-   python generate_academic_paper_html.py
-   ```
-   Open `academic_paper_reader.html` in any modern web browser to view the manuscript with live MathJax SVG mathematics.
+3. **Inspect or Compile NeurIPS Conference Paper:**
+   The full academic manuscript is provided in [`overleaf_package/`](overleaf_package/) and packaged as [`CS5478_Wafer_Transfer_Overleaf_Package.zip`](CS5478_Wafer_Transfer_Overleaf_Package.zip) for one-click upload to Overleaf. It compiles cleanly with zero undefined references using pdfLaTeX and BibTeX.
 
 ---
 
