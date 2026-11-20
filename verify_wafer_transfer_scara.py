@@ -60,6 +60,12 @@ def setup_simulation():
         enableConeFriction=1
     )
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+    p.resetDebugVisualizerCamera(
+        cameraDistance=1.1,
+        cameraYaw=50,
+        cameraPitch=-35,
+        cameraTargetPosition=[0.55, -0.10, 0.10]
+    )
     return client
 
 
