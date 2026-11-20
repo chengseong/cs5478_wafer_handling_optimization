@@ -1,7 +1,6 @@
 # Wafer Transfer Optimization
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyBullet](https://img.shields.io/badge/PyBullet-3.25-green.svg)](https://pybullet.org/)
 [![TOPP-RA](https://img.shields.io/badge/TOPP--RA-0.6.0-orange.svg)](https://github.com/hungpham2511/toppra)
 [![Target Slip](https://img.shields.io/badge/Wafer%20Slip-87.5%20%CE%BCm%20%28PASS%29-brightgreen.svg)]()
@@ -176,9 +175,3 @@ PHASE 7 FINAL LCP-STABILIZED TRANSFER BENCHMARK RESULTS:
 In compliance with the **National University of Singapore (NUS) Policy on Academic Integrity and the Use of Generative AI Tools in Coursework**:
 
 > The author acknowledges the use of Generative AI tools (specifically Google Gemini / Antigravity) during the technical preparation of this project and report.
-
----
-
-## 7. License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
